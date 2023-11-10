@@ -1,0 +1,80 @@
+version: '3.6'
+services:
+
+  mosquitto_broker:
+    image: eclipse-mosquitto:2.0.17
+    container_name: mosquitto
+    hostname: mosquitto_broker
+    restart: always
+    volumes:
+      - ./config/mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - data:/mosquitto/data
+      - log:/mosquitto/log
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+
+  telegraf:
+    image: telegraf:1.27
+    container_name: telegraf
+    restart: always
+    volumes:
+    - ./config/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf
+    environment: 
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=admin_token
+    depends_on:
+      - influxdb
+    links:
+      - influxdb
+    ports:
+    - '8125:8125'
+
+  influxdb:
+    image: influxdb:2.7
+    container_name: influxdb
+    restart: always
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      ###############################################################################################
+      #     Los siguientes datos deben coincidir con los utilizado para loguearse la primera vez.   #
+      ###############################################################################################
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=adminadmin
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=admin_token
+      # Los siguientes 2 parametros deben coincidir con los que figuran en el archivo "telegraf.conf"
+      - DOCKER_INFLUXDB_INIT_ORG=polo
+      - DOCKER_INFLUXDB_INIT_BUCKET=data_polo
+      ################################################################################################
+    ports:
+      - '8086:8086'
+    volumes:
+      - influxdb-storage:/var/lib/influxdb
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana-server
+    restart: always
+    depends_on:
+      - influxdb
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=
+
+    links:
+      - influxdb
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./config/grafana/datasource/influxdb.yaml:/etc/grafana/provisioning/datasources/influxdb.yaml
+      - ./config/grafana/dashboard/dashboard.yaml:/etc/grafana/provisioning/dashboards/dashboard.yaml
+      - ./config/grafana/dashboard/dashboard_polo_externo.json:/etc/grafana/provisioning/dashboards/dashboard_polo_externo.json
+      - ./config/grafana/dashboard/home.json:/usr/share/grafana/public/dashboards/home.json
+      - grafana_data:/var/lib/grafana
+      
+volumes:
+  grafana_data: {}
+  influxdb-storage: {}
+  data: {}
+  log: {}
+    

@@ -1,0 +1,5 @@
+# Configuración de MQTT
+MQTT_BROKER = "192.168.1.11"
+MQTT_PORT = 1883
+MQTT_TOPIC = "polo/led"
+MQTT_KEEPALIVE_INTERVAL = 45

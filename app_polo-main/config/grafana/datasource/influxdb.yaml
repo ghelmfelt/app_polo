@@ -1,0 +1,21 @@
+apiVersion: 1
+
+deleteDatasources:
+  - name: InfluxDB_v2_Flux
+  - name: InfluxDB
+
+
+datasources:
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    isDefault: 1
+    basicAuth: true
+    withCredentials: false
+    jsonData:
+      version: Flux
+      organization: polo
+      defaultBucket: data_polo
+    secureJsonData:
+      token: admin_token
